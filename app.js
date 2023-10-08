@@ -1,74 +1,77 @@
-const express = require('express')
-const exphbs = require('express-handlebars')
-const app = express()
-const port = 3000
-const hostname = '127.0.0.1'
-const mongoose = require('mongoose')
-const bodyParser = require('body-parser')
-const fileUpload = require('express-fileupload')
-const generateDate = require('./helpers/generateDate').generateDate
+const express = require('express');
+const exphbs = require('express-handlebars');
+const app = express();
+const port = 3000;
+const hostname = '127.0.0.1';
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const fileUpload = require('express-fileupload');
+const generateDate = require('./helpers/generateDate').generateDate;
 const expressSession = require("express-session");
-const mongoStore = require('connect-mongo') //Connect-Mongo 1. adım
-
+const mongoStore = require('connect-mongo'); // Connect-Mongo 1. adım
 
 mongoose.connect('mongodb://127.0.0.1:27017/nodeblog', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
+});
 
 app.use(expressSession({
   secret: 'test',
   resave: false,
   saveUninitialized: true,
-  store: mongoStore.create({ mongoUrl: 'mongodb://127.0.0.1/nodeblog' }) // ConnectMongo 2.adım
-}))
+  store: mongoStore.create({ mongoUrl: 'mongodb://127.0.0.1/nodeblog' }), // ConnectMongo 2.adım
+}));
 
-//Flash - Message Middleware
+// Flash - Message Middleware
 app.use(function (req, res, next) {
-  res.locals.sessionFlash = req.session.sessionFlash
-  delete req.session.sessionFlash
-  next()
-})
+  res.locals.sessionFlash = req.session.sessionFlash;
+  delete req.session.sessionFlash;
+  next();
+});
 
+app.use(fileUpload());
+app.use(express.static('public'));
 
-app.use(fileUpload())
-app.use(express.static('public'))
-
-app.engine('handlebars', exphbs.engine({ helpers: { generateDate: generateDate } }))
-app.set('view engine', 'handlebars')
+app.engine('handlebars', exphbs.engine({
+  helpers: { generateDate: generateDate },
+  // Bu runtime option kullanılacak
+  runtimeOptions: {
+    allowProtoPropertiesByDefault: true, // "prototype access" güvenlik önlemini devre dışı bırakır
+  },
+}));
+app.set('view engine', 'handlebars');
 
 // parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // parse application/json
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
-//Display Link Middleware
+// Display Link Middleware
 app.use(function (req, res, next) {
-  const { userId } = req.session
+  const { userId } = req.session;
   if (userId) {
     res.locals = {
-      displayLink: true
-    }
+      displayLink: true,
+    };
   } else {
     res.locals = {
-      displayLink: false
-    }
+      displayLink: false,
+    };
   }
-  next()
-})
+  next();
+});
 
-const main = require('./routes/main')
-const posts = require('./routes/posts')
-const users = require('./routes/users')
-const admin = require('./routes/admin/index')
+const main = require('./routes/main');
+const posts = require('./routes/posts');
+const users = require('./routes/users');
+const admin = require('./routes/admin/index');
 
-app.use('/', main)
-app.use('/posts', posts)
-app.use('/users', users)
-app.use('/admin', admin)
+app.use('/', main);
+app.use('/posts', posts);
+app.use('/users', users);
+app.use('/admin', admin);
 
 app.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`)
-})
-
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
