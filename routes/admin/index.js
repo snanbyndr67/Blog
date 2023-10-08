@@ -7,7 +7,7 @@ router.get('/', (req,res) =>{
 })
 
 router.get('/categories',(req,res) => {
-    Category.find({}).then(categories => {
+    Category.find({}).sort({$natural:-1}).then(categories => {
         res.render('admin/categories', { categories: categories })
     })
 })
@@ -24,6 +24,24 @@ router.post('/categories', (req,res) => {
         console.log("Error: ", error);
     })
 })
+
+/*
+router.delete('/categories/:id', (req,res) => {
+    Category.remove({_id : req.params.id}).then(() => {
+        res.redirect('/admin/categories')
+    })
+})
+*/
+router.delete('/categories/:id', (req, res) => {
+    Category.deleteOne({ _id: req.params.id })
+        .then(() => {
+            res.redirect('/admin/categories');
+        })
+        .catch(error => {
+            // Handle errors
+            console.error("Error:", error);
+        });
+});
 
 
 
