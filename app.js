@@ -7,9 +7,10 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
 const generateDate = require('./helpers/generateDate').generateDate;
+const limit = require('./helpers/limit').limit;
 const expressSession = require("express-session");
 const mongoStore = require('connect-mongo'); // Connect-Mongo 1. adım
-const methodOverride = require('method-override')
+const methodOverride = require('method-override');
 
 mongoose.connect('mongodb://127.0.0.1:27017/nodeblog', {
   useNewUrlParser: true,
@@ -34,13 +35,20 @@ app.use(fileUpload());
 app.use(express.static('public'));
 app.use(methodOverride('_method'))
 
-app.engine('handlebars', exphbs.engine({
-  helpers: { generateDate: generateDate },
-  // Bu runtime option kullanılacak
+//Handlebars Helpers
+const hbs = exphbs.create({
+  helpers: {
+    generateDate: generateDate,
+    limit: limit
+  },
   runtimeOptions: {
     allowProtoPropertiesByDefault: true, // "prototype access" güvenlik önlemini devre dışı bırakır
   },
-}));
+
+})
+
+
+app.engine('handlebars', hbs.engine);
 app.set('view engine', 'handlebars');
 
 // parse application/x-www-form-urlencoded

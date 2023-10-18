@@ -27,12 +27,16 @@ router.get('/admin', (req,res) =>{
 router.get('/blog', (req,res) =>{
     Post.find({}).populate({path:'author', model: UserModel}).sort({$natural:-1}).lean().then(posts => {
         Category.find({}).then(categories => {
-        res.render('site/blog', {posts: posts, categories: categories})
-        })
+            res.render('site/blog', {posts: posts, categories: categories})
+        }).catch(err => {
+            console.error(err);
+            res.render('error-page'); // Hata sayfasına yönlendirme
+        });
     }).catch(err => {
         console.error(err);
-        // Hata durumunda kullanıcıya bir hata sayfası göndermek veya başka bir işlem yapmak isteyebilirsiniz.
+        res.render('error-page'); // Hata sayfasına yönlendirme
     });
+    
 });
 
 router.get('/contact', (req,res) =>{
