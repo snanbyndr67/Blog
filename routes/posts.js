@@ -17,6 +17,40 @@ router.get('/new', (req, res) => {
     })
 })
 
+function escapeRegex(text) {
+    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+};
+
+router.get("/search", function(req, res) {
+    if (req.query.look) {
+       const regex = new RegExp(escapeRegex(req.query.look), 'gi');
+       Post.find({ "title": regex }).populate({ path: 'author', model: UserModel }).sort({ $natural: -1 }).lean().then(posts => {
+        Category.aggregate([
+            {
+                $lookup: {
+                    from: "posts",
+                    localField: "_id",
+                    foreignField: "category",
+                    as: "posts"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    num_of_posts: { $size: "$posts" }
+                }
+            }
+        ])
+        .then(categories => {
+            res.render('site/blog', {categories: categories, posts: posts });
+        });
+       });
+    } else {
+        res.redirect('/'); // Eğer 'look' sorgu parametresi yoksa başka bir yere yönlendirme yapabilirsiniz.
+    }
+});
+
 router.get('/category/:categoryId', (req, res)=> {
     Post.find({category:req.params.categoryId}).populate({path: 'category', model:Category}) .populate({ path: 'author', model: UserModel }).then(posts =>{
         Category.aggregate([
