@@ -6,8 +6,7 @@ const hostname = '127.0.0.1';
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
-const generateDate = require('./helpers/generateDate').generateDate;
-const limit = require('./helpers/limit').limit;
+const { generateDate, limit, truncate} = require('./helpers/hbs');
 const expressSession = require("express-session");
 const mongoStore = require('connect-mongo'); // Connect-Mongo 1. adım
 const methodOverride = require('method-override');
@@ -24,13 +23,6 @@ app.use(expressSession({
   store: mongoStore.create({ mongoUrl: 'mongodb://127.0.0.1/nodeblog' }), // ConnectMongo 2.adım
 }));
 
-// Flash - Message Middleware
-app.use(function (req, res, next) {
-  res.locals.sessionFlash = req.session.sessionFlash;
-  delete req.session.sessionFlash;
-  next();
-});
-
 app.use(fileUpload());
 app.use(express.static('public'));
 app.use(methodOverride('_method'))
@@ -39,7 +31,8 @@ app.use(methodOverride('_method'))
 const hbs = exphbs.create({
   helpers: {
     generateDate: generateDate,
-    limit: limit
+    limit: limit,
+    truncate: truncate
   },
   runtimeOptions: {
     allowProtoPropertiesByDefault: true, // "prototype access" güvenlik önlemini devre dışı bırakır
@@ -71,6 +64,15 @@ app.use(function (req, res, next) {
   }
   next();
 });
+
+
+// Flash - Message Middleware
+app.use(function (req, res, next) {
+  res.locals.sessionFlash = req.session.sessionFlash;
+  delete req.session.sessionFlash;
+  next();
+});
+
 
 const main = require('./routes/main');
 const posts = require('./routes/posts');
