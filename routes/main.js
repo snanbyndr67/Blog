@@ -25,31 +25,47 @@ router.get('/admin', (req,res) =>{
 // })
 
 router.get('/blog', (req, res) => {
+
+    const postPerPage = 10 // Sayfada gösterilecek post sayısı
+    const page = req.query.page || 1
+
     Post.find({})
         .populate({ path: 'author', model: UserModel })
         .sort({ $natural: -1 })
-        .lean()
+        .lean() 
+        .skip((postPerPage * page) - postPerPage)
+        .limit(postPerPage)
         .then(posts => {
-            Category.aggregate([
-                {
-                    $lookup: {
-                        from: "posts",
-                        localField: "_id",
-                        foreignField: "category",
-                        as: "posts"
+            Post.countDocuments().then(postCount => {
+                Category.aggregate([
+                    {
+                        $lookup: {
+                            from: "posts",
+                            localField: "_id",
+                            foreignField: "category",
+                            as: "posts"
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 1,
+                            name: 1,
+                            num_of_posts: { $size: "$posts" }
+                        }
                     }
-                },
-                {
-                    $project: {
-                        _id: 1,
-                        name: 1,
-                        num_of_posts: { $size: "$posts" }
-                    }
-                }
-            ])
-                .then(categories => {
-                    res.render('site/blog', { posts: posts, categories: categories })
-                })
+                ])
+                    .then(categories => {
+                        res.render('site/blog', { 
+                            posts: posts, 
+                            categories: categories,
+                            current: parseInt(page),
+                            pages: Math.ceil(postCount/postPerPage)
+                        });
+                    })
+
+            })
+           
+
                 .catch(err => {
                     console.error(err);
                     res.render('error-page'); // Hata sayfasına yönlendirme
